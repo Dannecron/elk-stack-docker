@@ -1,0 +1,78 @@
+#=========================== Filebeat prospectors =============================
+
+filebeat.inputs:
+
+  - type: docker
+    fields:
+      log_type: docker_logs
+    containers:
+      ids:
+        - "*"
+
+processors:
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+
+  - add_fields:
+      fields:
+        type: log
+
+  - if:
+      regexp:
+        container.name: ".*nginx.*"
+    then:
+      - add_fields:
+          fields:
+            name: nginx
+  
+  - if:
+      regexp:
+        container.name: ".*postgres.*"
+    then:
+      - add_fields:
+          fields:
+            name: postgres
+
+  - if:
+      regexp:
+        container.name: ".*redis.*"
+    then:
+      - add_fields:
+          fields:
+            name: redis
+
+  - if:
+      regexp:
+        container.name: ".*traefik.*"
+    then:
+      - add_fields:
+          fields:
+            name: traefik
+
+  - if:
+      not:
+        has_fields: ['fields.name']
+    then:
+      - add_fields:
+          fields:
+            name: application
+
+#================================ Outputs =====================================
+
+output.logstash:
+  hosts: '${LOGSTASH_HOSTS}'
+
+#================================ Logging =====================================
+
+logging:
+  level: warning
+
+  # enable file rotation with default configuration
+  to_files: true
+
+  # do not log to syslog
+  to_syslog: false
+  files:
+    path: /var/log/filebeat
+    name: beat.log
+    keepfiles: 7

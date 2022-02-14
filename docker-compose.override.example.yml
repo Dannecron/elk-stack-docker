@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    environment:
+      xpack.security.enabled: 'false'
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  kibana:
+    ports:
+      - "5001:5001"
+    volumes:
+      - kibana-data:/usr/share/kibana/data
+
+  filebeat:
+    build:
+      context: ./filebeat
+      args:
+        - STACK_VERSION=${STACK_VERSION}
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LOGSTASH_HOSTS: "logstash:5001"
+    profiles:
+      - "filebeat"
+
+volumes:
+  elasticsearch-data:
+  kibana-data:

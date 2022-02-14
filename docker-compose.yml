@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  elasticsearch:
+    image: elasticsearch:${STACK_VERSION}
+    environment:
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+      - ./elasticsearch/config.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    expose:
+      - 9200
+      - 9300
+    profiles:
+      - "elk"
+
+  logstash:
+    image: logstash:${STACK_VERSION}
+    environment:
+      XPACK_MONITORING_ENABLED: "FALSE"
+      ES_HOST: elasticsearch:9200
+      LOG_LEVEL: warn
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+      - ./logstash/pipeline/:/usr/share/logstash/pipeline/
+      - ./logstash/config.yml:/usr/share/logstash/config/logstash.yml
+    expose:
+      - 5001
+    depends_on:
+      - elasticsearch
+    profiles:
+      - "elk"
+
+  kibana:
+    image: kibana:${STACK_VERSION}
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    # volumes:
+    #   - ./kibana/config.yml:/usr/share/kibana/config/kibana.yml
+    expose:
+      - 5601
+    depends_on:
+      - elasticsearch
+    profiles:
+      - "elk"
